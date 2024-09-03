@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../services/axiosSetup';
 import { Form, Button, Container, Row, Col } from 'react-bootstrap';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import moment from 'moment';
 
 const EditMember = () => {
@@ -17,6 +19,7 @@ const EditMember = () => {
     const [bloodGroup, setBloodGroup] = useState('');
     const [electrophoresis, setElectrophoresis] = useState('');
     const [message, setMessage] = useState('');
+    const [signFa, setSignFA] = useState('');
     const [conjointid, setConjointId] = useState('');
     const [metier, setMetier] = useState('');
     const [members, setMembers] = useState([]);
@@ -73,6 +76,7 @@ const EditMember = () => {
                     setBloodGroup(memberResponse?.data?.userinfo?.groupe_sanguin || '');
                     setElectrophoresis(memberResponse?.data?.userinfo?.electrophorese || '');
                     setSelectedLinkType(memberResponse?.data?.userinfo?.type_de_lien || '');
+                    setSignFA(memberResponse?.data?.userinfo?.signe_du_fa || '');
                 }
             } catch (error) {
                 if (isMounted) {
@@ -99,6 +103,7 @@ const EditMember = () => {
         id_pere: pereid !== originalData?.père?._id ? pereid : undefined,
         id_mere: mereid !== originalData?.mère?._id ? mereid : undefined,
         id_conjoint: conjointid !== originalData?.conjoint?.id ? conjointid : undefined,
+        signe_du_fa: signFa !== originalData?.signe_du_fa ? signFa : undefined,
     };
     const filteredData = Object.fromEntries(
         Object.entries(updateData).filter(([_, v]) => v !== undefined)
@@ -108,9 +113,10 @@ const EditMember = () => {
         try {
             const endpoint = isAdmin 
                     ? `/admin/member/modify-profile-admin` 
-                    : `/user/member/modify-profile-user`;
+                    : `/user/member/modify-profile`;
             await axiosInstance.put(endpoint, filteredData);//route pour modifier les informations de l'utilisateur depuis sont profil
             setMessage('Membre modifié avec succès!');
+            toast.success('Ajout réussi! Membre ajouté avec succès.');
             navigate('/home');
         } catch (error) {
             const errorMessage = error.response?.data?.message || 'Une erreur est survenue';
@@ -119,7 +125,7 @@ const EditMember = () => {
         }
     };
     const handleCancel = () => {
-        navigate('/home');
+        navigate('/profile');
     };
 
     return (
@@ -293,7 +299,7 @@ const EditMember = () => {
                                 onChange={(e) => setReligion(e.target.value)}
                             >
                                 <option value="">Sélectionner...</option>
-                                <option value="Vodouisant">Vodouisant</option>
+                                <option value="Vodouisme">Vodouisme</option>
                                 <option value="Christianisme">Christianisme</option>
                                 <option value="Islam">Islam</option>
                                 <option value="Hindouisme">Hindouisme</option>
@@ -335,13 +341,22 @@ const EditMember = () => {
                                 <option value="Autre">Autre</option>
                             </Form.Control>
                         </Form.Group>
+                        <Form.Group controlId="signe du Fa">
+                            <Form.Label>Signe du Fâ</Form.Label>
+                            <Form.Control
+                                type="text"
+                                value={signFa}
+                                onChange={(e) => setSignFA(e.target.value)}
+                            />
+                        </Form.Group>
                     </fieldset>
                     <Button variant="primary" type="submit">Modifier</Button>
-                    <Button variant="secondary" onClick={handleCancel}>Annuler</Button>
+                    <Button variant="secondary" onClick={handleCancel}>Retour</Button>
                 </Form>
             ) : (
                 <p>Chargement des données du membre...</p>
             )}
+        <ToastContainer/>
         </Container>
     );
 };

@@ -269,7 +269,7 @@ const EditMember = () => {
                                 onChange={(e) => setReligion(e.target.value)}
                             >
                                 <option value="">Sélectionner...</option>
-                                <option value="Vodouisant">Vodouisant</option>
+                                <option value="Vodouisme">Vodouisme</option>
                                 <option value="Christianisme">Christianisme</option>
                                 <option value="Islam">Islam</option>
                                 <option value="Hindouisme">Hindouisme</option>

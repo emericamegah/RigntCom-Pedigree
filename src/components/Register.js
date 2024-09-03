@@ -1,8 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect} from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import { faGoogle, faFacebookF } from '@fortawesome/free-brands-svg-icons';
-import axios from 'axios';
 import { useFamily } from '../context/FamilyContext';
 import { Link } from 'react-router-dom'; 
 import '../styles/sb-admin-2.min.css'; 
@@ -11,6 +10,7 @@ import axiosInstance from '../services/axiosSetup';
 
 const Register = ({ onRegister, newFamille }) => {
   const { familyData } = useFamily();
+  const [lastName, setLastName] = useState('');
   const [dateNaissance, setDateNaissance] = useState('');
   const [firstName, setFirstName] = useState('');
   const [email, setEmail] = useState('');
@@ -21,7 +21,7 @@ const Register = ({ onRegister, newFamille }) => {
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isRegistered, setIsRegistered] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(false);  
 
   const validateEmail = (email) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -68,10 +68,11 @@ const Register = ({ onRegister, newFamille }) => {
     }
   
     // Soumission du formulaire
+    console.log(familyData.family_name);
     try {
       setIsSubmitting(true);
       const response = await axiosInstance.post('/auth/enregistrer', {
-        nom: familyData.family_name || '',
+        nom: lastName,
         prenom: firstName,
         date_de_naissance: dateNaissance,
         email,
@@ -129,6 +130,11 @@ const Register = ({ onRegister, newFamille }) => {
     }
   }, [password]);
 
+  useEffect(() => {
+    const name = familyData.family_name;
+    setLastName(name);
+  }, [familyData.family_name]);
+
   return (
     <div className="container">
       <div className="card o-hidden border-0 shadow-lg my-5">
@@ -165,8 +171,8 @@ const Register = ({ onRegister, newFamille }) => {
                           type="text"
                           className="form-control form-control-user"
                           id="familyName"
-                          value={familyData.family_name || ''}
-                          readOnly
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
                           placeholder="Nom *"
                           required
                           disabled={isSubmitting}

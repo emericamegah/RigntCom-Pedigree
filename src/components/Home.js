@@ -8,7 +8,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 
 const Home = () => {
-  const { role, isMember, logout, user } = useAuth();
+  const { role, logout, user } = useAuth();
   const navigate = useNavigate();
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -48,28 +48,6 @@ const Home = () => {
         setLoading(false);
       }
     };
-
-    /*const checkIfMemberExists = async (firstName, dateNaissance, gender, electrophoresis, bloodGroup) => {
-      try {
-        const response = await axiosInstance.get('/user/member/tous', {
-          params: { prenom: firstName, date_de_naissance: dateNaissance, sexe: gender, electrophorese: electrophoresis, groupe_sanguin: bloodGroup }
-        });
-        return response.data.exists; // Supposons que la réponse contient un champ 'exists'
-      } catch (error) {
-        console.error('Erreur lors de la vérification de l\'existence du membre:', error);
-        return false;
-      }
-    };
-
-    const memberExists = checkIfMemberExists(firstName, dateNaissance, gender, electrophoresis, bloodGroup);
-    if (memberExists) {
-        setMessage('Un membre avec ces informations existe déjà.');
-        toast.error('Un membre avec ces informations existe déjà.');
-        setLoading(false);
-        setTimeout(() => navigate('/home'), 3000); // Redirection vers la page d'accueil après 3 secondes
-        return;
-    }*/
-
     fetchData();
   }, []);
 
@@ -86,6 +64,10 @@ const Home = () => {
   if (error) {
     return <Alert variant="danger">Erreur : {error}</Alert>;
   }
+
+  let isMember = false;
+  if (userData.id_membre !== undefined)
+    isMember = true;
 
   return (
     <div className="dashboard-container">

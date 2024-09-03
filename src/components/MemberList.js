@@ -14,7 +14,49 @@ const MemberList = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedSex, setSelectedSex] = useState('');
+  const [userData, setUserData] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      setLoading(true);
+      try {
+        const response = await axiosInstance.get(`/user/member/tous`);
+        if (response.data.length === 0) {
+          setError('Aucun membre trouvé.');
+        } else {
+          setFilteredMembers(response.data);
+        }
+      } catch (error) {
+        setError('Erreur lors de la récupération des membres.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMembers();
+  }, []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const userResponse = await axiosInstance.get('/utils/profile', {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          });
+          setUserData(userResponse.data.user);
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération des données:', error.response?.data || error.message);
+        setError('Erreur lors de la récupération des données.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
 
   const columns = [
     {
@@ -37,7 +79,8 @@ const MemberList = () => {
       name: 'Actions',
       cell: row => (
         <div>
-          <Button
+          {(userData?.id_membre === row._id || role === 'ADMIN') && (
+            <Button
             onClick={() => handleDetail(row._id)}
             variant="contained"
             color="info"
@@ -45,7 +88,7 @@ const MemberList = () => {
             sx={{ mr: 1 }}
           >
             Détail
-          </Button>
+          </Button>)}
           {role === 'ADMIN' && (
             <Button
               onClick={() => handleEdit(row)}
@@ -60,26 +103,6 @@ const MemberList = () => {
       ),
     },
   ];
-
-  useEffect(() => {
-    const fetchMembers = async () => {
-      setLoading(true);
-      try {
-        const response = await axiosInstance.get(`/user/member/tous`);
-        if (response.data.length === 0) {
-          setError('Aucun membre trouvé.');
-        } else {
-          setFilteredMembers(response.data);
-        }
-      } catch (error) {
-        setError('Erreur lors de la récupération des membres.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMembers();
-  }, []);
 
   const handleGoHome = () => {
     navigate('/home');

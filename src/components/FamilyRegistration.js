@@ -17,7 +17,7 @@ const FamilyRegistration = ({ onRegister, onFamilyName, setnewFamille }) => {
   const [showLoginLink, setShowLoginLink] = useState(false);
   const { setFamilyData } = useFamily();
 
-  const HOST = "http://192.168.86.90:5000"; // Remplacez par votre URL d'API
+  const HOST = "http://192.168.86.66:5000"; // Remplacez par votre URL d'API
 
   const handleSubmit = async (e) => {
     e.preventDefault();

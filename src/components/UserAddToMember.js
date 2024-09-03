@@ -4,8 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../services/axiosSetup';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useAuth } from '../context/AuthContext'; 
-
+import moment from 'moment';
 
 const UserMember = () => {
     const [userData, setUserData] = useState('');
@@ -25,11 +24,11 @@ const UserMember = () => {
     const [members, setMembers] = useState([]);
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
-    const { role } = useAuth(); // Récupérez les informations de l'utilisateur
-    const isAdmin = role === 'ADMIN'; // Déterminez si l'utilisateur est un administrateur
     const [adminInfo, setAdminInfo] = useState(null); // Ajouter un état pour stocker les informations de l'admin
     
     const navigate = useNavigate(); 
+    
+    let isAdmin = false;
 
     useEffect(() => {
         const fetchMembers = async () => {
@@ -64,8 +63,8 @@ const UserMember = () => {
                         Authorization: `Bearer ${token}`
                     }
                 });
-                setUserData(userResponse.data.user);
-
+                setUserData(userResponse?.data?.user);
+                setDateNaissance(moment(userData?.date_de_naissance).format('YYYY-MM-DD'));
                 if (userData?.role === 'ADMIN') {
                     const adminResponse = await axiosInstance.get('/utils/infos', {
                         headers: {
@@ -74,40 +73,21 @@ const UserMember = () => {
                     });
                     setAdminInfo(adminResponse.data);
                 }
+                
             } catch (error) {
                 console.error('Erreur lors de la récupération des données:', error.response?.data || error.message);
             }
         };
         fetchData();
-    }, [isAdmin]);
+    }, [userData?.role]);
+    
+    isAdmin = userData?.role === 'ADMIN' ? true : false;
 
-    const checkIfMemberExists = async (firstName, dateNaissance, gender, electrophoresis, bloodGroup) => {
-        try {
-          const response = await axiosInstance.get('/user/member/tous', {
-            params: { prenom: firstName, date_de_naissance: dateNaissance, sexe: gender, electrophorese: electrophoresis, groupe_sanguin: bloodGroup }
-          });
-          return response.data.exists; // Supposons que la réponse contient un champ 'exists'
-        } catch (error) {
-          console.error('Erreur lors de la vérification de l\'existence du membre:', error);
-          return false;
-        }
-    };
 
       const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
-    
-        // Vérifier si le membre existe déjà
-        const memberExists = await checkIfMemberExists(userData.prenom, dateNaissance, gender,electrophoresis, bloodGroup);
-        if (memberExists) {
-            setMessage('Un membre avec ces informations existe déjà.');
-            toast.error('Un membre avec ces informations existe déjà.');
-            setLoading(false);
-            setTimeout(() => navigate('/home'), 3000); // Redirection vers la page d'accueil après 3 secondes
-            return;
-        }
-    
-        // 
+
         const payload = {
             prenom: userData?.prenom,
             nom: userData?.nom,
@@ -123,16 +103,15 @@ const UserMember = () => {
             conjoint: conjointName,
             profession: metier
         };
-        if (userData?.role !== 'ADMIN') {
-            payload.type_de_lien = selectedLinkType;
-        }
+        payload.type_de_lien = userData?.role !== 'ADMIN' ? selectedLinkType : payload.type_de_lien;
+
     
         try {
             const token = localStorage.getItem('token');
             const endpoint = isAdmin 
                     ? `/admin/member/new-member` 
                     : `/user/member/new-member`;
-            const response = await axiosInstance.post(`/admin/member/new-member`, payload, {
+            const response = await axiosInstance.post(endpoint, payload, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -145,7 +124,7 @@ const UserMember = () => {
             resetForm();
             setTimeout(() => navigate('/home'), 3000); // Rediriger après l'ajout réussi
         } catch (error) {
-            const errorMessage = error.response?.data?.Message || 'Une erreur est survenue';
+            const errorMessage = error.response?.data?.message || 'Une erreur est survenue';
             setMessage(errorMessage);
             if (errorMessage === 'Cette personne est déja membre de la famille') {
                 setLoading(false);
@@ -180,6 +159,8 @@ const UserMember = () => {
         setMetier('');
         setMessage('');
     };
+    console.log(moment(userData?.date_de_naissance).format('DD/MM/YYYY'));
+
 
    // Assumer que l'admin est toujours connecté
 //    const isAdmin = true; // Cette valeur devrait être définie en fonction de la logique d'authentification réelle
@@ -277,7 +258,6 @@ const UserMember = () => {
                                 as="select"
                                 value={selectedLinkType}
                                 onChange={(e) => setSelectedLinkType(e.target.value)}
-                                required
                             >
                                 <option value="">Sélectionner un type de lien...</option>
                                 {linkTypes.map((type) => (
@@ -333,7 +313,7 @@ const UserMember = () => {
                             onChange={(e) => setReligion(e.target.value)}
                         >
                             <option value="">Sélectionner...</option>
-                            <option value="Vodouisant">Vodouisant</option>
+                            <option value="Vodouisme">Vodouisme</option>
                             <option value="Christianisme">Christianisme</option>
                             <option value="Islam">Islam</option>
                             <option value="Hindouisme">Hindouisme</option>

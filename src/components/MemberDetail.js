@@ -4,7 +4,6 @@ import axiosInstance from '../services/axiosSetup';
 import { Container, Row, Col, Table, Button, Alert, Spinner } from 'react-bootstrap';
 import moment from 'moment';
 import useLinkTypes from '../hooks/useLinkTypes';
-import { useAuth } from '../context/AuthContext'; // Importez votre contexte d'authentification
 
 const MemberDetail = () => {
     const { id } = useParams();
@@ -13,7 +12,7 @@ const MemberDetail = () => {
     const [loading, setLoading] = useState(true);
     const [userData, setUserData] = useState('');
     const [error, setError] = useState(null);
-    const { linkTypes, loading: linkTypesLoading, error: linkTypesError } = useLinkTypes();
+    const { loading: linkTypesLoading, error: linkTypesError } = useLinkTypes();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -34,13 +33,22 @@ const MemberDetail = () => {
 
     let isAdmin = false;  
     if (userData?.role === 'ADMIN') isAdmin = true;
+    let isMember = false;
+    if (userData?.id_membre !== undefined)
+      isMember = true;
 
     useEffect(() => {
         const fetchMemberDetails = async () => {
             try {
                 setLoading(true);
-                const response = await axiosInstance.get(`/admin/member/details/${id}`);
-                setMember(response.data.data);
+                const endpoint = isAdmin 
+                    ? `/admin/member/details/${id}` 
+                    : `/user/member/user-info`;
+                const response = await axiosInstance.get(endpoint);
+                if (isAdmin)
+                    setMember(response.data.data);
+                else
+                    setMember(response.data?.userinfo);
             } catch (error) {
                 console.error('Erreur lors de la récupération des détails du membre', error);
                 setError('Erreur lors de la récupération des détails du membre.');
@@ -73,7 +81,7 @@ const MemberDetail = () => {
         );
     }
 
-    if (!member) {
+    if (!isMember) {
         return (
             <Container className="text-center mt-5">
                 <Alert variant="warning">
@@ -105,11 +113,6 @@ const MemberDetail = () => {
         );
     }
 
-    const getLinkTypeDescription = (type) => {
-        const typeObj = linkTypes.find(linkType => linkType.id === type);
-        return typeObj ? typeObj.description : 'Non spécifié';
-    };
-
     return (
         <Container className="mt-4">
             <Row>
@@ -119,56 +122,62 @@ const MemberDetail = () => {
                         <tbody>
                             <tr>
                                 <th>Nom</th>
-                                <td>{member.nom || 'Non spécifié'}</td>
+                                <td>{member?.nom || 'Non spécifié'}</td>
                             </tr>
                             <tr>
                                 <th>Prénom</th>
-                                <td>{member.prenom || 'Non spécifié'}</td>
+                                <td>{member?.prenom || 'Non spécifié'}</td>
                             </tr>
                             <tr>
                                 <th>Date de naissance</th>
-                                <td>{member.date_de_naissance ? moment(member.date_de_naissance).format('DD/MM/YYYY') : 'Non spécifié'}</td>
+                                <td>{member?.date_de_naissance ? moment(member?.date_de_naissance).format('DD/MM/YYYY') : 'Non spécifié'}</td>
                             </tr>
                             <tr>
                                 <th>Sexe</th>
-                                <td>{member.sexe || 'Non spécifié'}</td>
-                            </tr>
-                            <tr>
-                                <th>Père</th>
-                                <td>{member.id_pere && member.pere ? `${member.pere.prenom} ${member.pere.nom}` : 'Non spécifié'}</td>
-                            </tr>
-                            <tr>
-                                <th>Mère</th>
-                                <td>{member.id_mere && member.mere ? `${member.mere.prenom} ${member.mere.nom}` : 'Non spécifié'}</td>
+                                <td>{member?.sexe || 'Non spécifié'}</td>
                             </tr>
                             <tr>
                                 <th>État matrimonial</th>
-                                <td>{member.statut_matrimonial || 'Non spécifié'}</td>
+                                <td>{member?.statut_matrimonial || 'Non spécifié'}</td>
                             </tr>
                             <tr>
-                                <th>Type de lien</th>
-                                <td>{member.type_de_lien ? getLinkTypeDescription(member.type_de_lien) : 'Non spécifié'}</td>
+                                <th>Père</th>
+                                <td>{member?.père ? `${member?.père?.prenom} ${member?.père?.nom}` : 'Non spécifié'}</td>
+                            </tr>
+                            <tr>
+                                <th>Mère</th>
+                                <td>{member?.mère ? `${member?.mère?.prenom} ${member?.mère?.nom}` : 'Non spécifié'}</td>
                             </tr>
                             <tr>
                                 <th>Conjoint</th>
-                                <td>{member.conjoint || 'Non spécifié'}</td>
+                                <td>{member?.conjoint ? `${member?.conjoint?.prenom} ${member?.conjoint?.nom}` : 'Non spécifié'}</td>
                             </tr>
                             <tr>
                                 <th>Profession</th>
-                                <td>{member.profession || 'Non spécifié'}</td>
+                                <td>{member?.profession || 'Non spécifié'}</td>
                             </tr>
                             <tr>
                                 <th>Religion</th>
-                                <td>{member.religion || 'Non spécifié'}</td>
+                                <td>{member?.religion || 'Non spécifié'}</td>
                             </tr>
-                            <tr>
-                                <th>Groupe sanguin</th>
-                                <td>{member.groupe_sanguin|| 'Non spécifié'}</td>
-                            </tr>
-                            <tr>
-                                <th>Électrophorèse</th>
-                                <td>{member.electrophorese|| 'Non spécifié'}</td>
-                            </tr>
+                            {userData?.id_membre === id && (
+                                <tr>
+                                    <th>Groupe sanguin</th>
+                                    <td>{member?.groupe_sanguin || 'Non spécifié'}</td>
+                                </tr>
+                            )}
+                            {userData?.id_membre === id && (
+                                <tr>
+                                    <th>Électrophorèse</th>
+                                    <td>{member?.electrophorese || 'Non spécifié'}</td>
+                                </tr>
+                            )}
+                            {userData?.id_membre === id && (
+                                <tr>
+                                    <th>Signe du Fâ</th>
+                                    <td>{member?.signe_du_fa || 'Non spécifié'}</td>
+                                </tr>
+                            )}
                         </tbody>
                     </Table>
                     <Button variant="primary" onClick={() => navigate(-1)}>Retour</Button>

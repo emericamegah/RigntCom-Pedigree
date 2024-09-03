@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const HOST = "http://192.168.86.90:5000"; // Adresse de votre backend
+  const HOST = "http://192.168.86.66:5000"; // Adresse de votre backend
 
   useEffect(() => {
     const fetchUser = async () => {
