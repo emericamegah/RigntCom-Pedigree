@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import countries from '../data/countries.json';
 import { useFamily } from '../context/FamilyContext';
+import axiosInstance from '../services/axiosSetup';
 // import '../styles/sb-admin-2.min.css'; // Importation du fichier CSS
 
 const FamilyRegistration = ({ onRegister, onFamilyName, setnewFamille }) => {
@@ -17,29 +17,24 @@ const FamilyRegistration = ({ onRegister, onFamilyName, setnewFamille }) => {
   const [showLoginLink, setShowLoginLink] = useState(false);
   const { setFamilyData } = useFamily();
 
-  const HOST = "http://192.168.86.66:5000"; // Remplacez par votre URL d'API
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
     setIsClicked(true);
 
     try {
-      const response = await axios.post(`${HOST}/api/auth/create`, {
+      const response = await axiosInstance.post(`auth/create`, {
         family_name,
         country,
         ethnicity,
         village
       });
 
-      const { fam_exist, idFamille } = response.data;
+      const { fam_exist, idFamille } = response?.data;
 
       if (fam_exist) {
         setMessage('La famille existe déjà ! Vous pouvez maintenant vous inscrire.');
         setMessageType('error');
-        // setCountry('');
-        // setEthnicity('');
-        // setVillage('');
         onFamilyName(family_name);
         setFamilyData({ family_name, idFamille, fam_exist });
         setShowLoginLink(true);
@@ -67,7 +62,27 @@ const FamilyRegistration = ({ onRegister, onFamilyName, setnewFamille }) => {
       setIsSubmitting(false);
     }
   };
-  
+
+  const handleFamilyNameChange = (e) => {
+    const newValue = e.target.value;
+    if (/^[A-Za-z\s]*$/.test(newValue)) {
+      setFamilyName(newValue);
+    }
+  };
+
+  const handleEthnicityChange = (e) => {
+    const newValue = e.target.value;
+    if (/^[A-Za-z\s]*$/.test(newValue)) {
+      setEthnicity(newValue);
+    }
+  };
+
+  const handleVillageChange = (e) => {
+    const newValue = e.target.value;
+    if (/^[A-Za-z\s]*$/.test(newValue)) {
+      setVillage(newValue);
+    }
+  };
 
   return (
     <div className="container">
@@ -94,16 +109,14 @@ const FamilyRegistration = ({ onRegister, onFamilyName, setnewFamille }) => {
                         id="familyName"
                         placeholder="Nom de la famille"
                         value={family_name}
-                        onChange={(e) => setFamilyName(e.target.value)}
+                        onChange={handleFamilyNameChange}
                         required
                         disabled={isSubmitting || fieldsDisabled}
-                        
                       />
                     </div>
                   </div>
                   <div className="form-group">
                     <select
-
                       className="form-select form-control-user"
                       id="country"
                       value={country}
@@ -127,7 +140,7 @@ const FamilyRegistration = ({ onRegister, onFamilyName, setnewFamille }) => {
                       id="ethnicity"
                       placeholder="Ethnicité"
                       value={ethnicity}
-                      onChange={(e) => setEthnicity(e.target.value)}
+                      onChange={handleEthnicityChange}
                       required
                       disabled={isSubmitting || fieldsDisabled}
                     />
@@ -139,7 +152,7 @@ const FamilyRegistration = ({ onRegister, onFamilyName, setnewFamille }) => {
                       id="village"
                       placeholder="Village"
                       value={village}
-                      onChange={(e) => setVillage(e.target.value)}
+                      onChange={handleVillageChange}
                       required
                       disabled={isSubmitting || fieldsDisabled}
                     />

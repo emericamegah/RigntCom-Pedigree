@@ -1,4 +1,3 @@
-// src/App.js
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Register from './components/Register';
@@ -22,7 +21,6 @@ import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import RoleBasedRoute from './components/RoleBasedRoute';
 import FamilyRegistration from './components/FamilyRegistration';
-
 import './App.css';
 import UserMember from './components/UserAddToMember';
 import UserInfo from './components/EditUserInfo';
@@ -43,7 +41,6 @@ function App() {
               <Route path="/logout" element={<Logout />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
-              
               {/* Protected Routes */}
               <Route path="/home" element={
                 <ProtectedRoute>
@@ -78,7 +75,7 @@ function App() {
               } />
               <Route path="/family-diagram" element={
                 <ProtectedRoute>
-                  <RoleBasedRoute allowedRoles={['ADMIN']}>
+                  <RoleBasedRoute allowedRoles={['ADMIN', 'USER']}>
                     <FamilyDiagram />
                   </RoleBasedRoute>
                 </ProtectedRoute>

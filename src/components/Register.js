@@ -22,6 +22,7 @@ const Register = ({ onRegister, newFamille }) => {
   const [messageType, setMessageType] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);  
+  const todayISO = new Date().toISOString().split('T')[0];
 
   const validateEmail = (email) => {
     const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -120,16 +121,6 @@ const Register = ({ onRegister, newFamille }) => {
     setShowConfirmPassword(!showConfirmPassword);
   };
 
-  // Validation en temps réel pour le mot de passe
-  useEffect(() => {
-    if (password && !validatePassword(password)) {
-      setMessage('Le mot de passe doit contenir au moins 8 caractères, une lettre majuscule, une lettre minuscule, un chiffre et un caractère spécial.');
-      setMessageType('error');
-    } else {
-      setMessage('');
-    }
-  }, [password]);
-
   useEffect(() => {
     const name = familyData.family_name;
     setLastName(name);
@@ -186,6 +177,7 @@ const Register = ({ onRegister, newFamille }) => {
                         id="familyName"
                         value={dateNaissance}
                         onChange={(e) => setDateNaissance(e.target.value)}
+                        max={todayISO}
                         placeholder="Date de naissance *"
                         required
                         disabled={isSubmitting}

@@ -46,7 +46,7 @@ const MemberList = () => {
               Authorization: `Bearer ${token}`
             }
           });
-          setUserData(userResponse.data.user);
+          setUserData(userResponse?.data?.user);
         }
       } catch (error) {
         console.error('Erreur lors de la récupération des données:', error.response?.data || error.message);

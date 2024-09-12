@@ -14,6 +14,7 @@ const UserMember = () => {
     const [isMarried, setIsMarried] = useState('');
     const [gender, setGender] = useState('');
     const [religion, setReligion] = useState('');
+    const [religionName, setReligionName] = useState('');
     const [bloodGroup, setBloodGroup] = useState('');
     const [electrophoresis, setElectrophoresis] = useState('');
     const [signFa, setSignFA] = useState('');
@@ -24,11 +25,12 @@ const UserMember = () => {
     const [members, setMembers] = useState([]);
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
-    const [adminInfo, setAdminInfo] = useState(null); // Ajouter un état pour stocker les informations de l'admin
-    
+    const [adminInfo, setAdminInfo] = useState(null);
     const navigate = useNavigate(); 
-    
+    const todayISO = new Date().toISOString().split('T')[0];
     let isAdmin = false;
+    
+    
 
     useEffect(() => {
         const fetchMembers = async () => {
@@ -65,7 +67,7 @@ const UserMember = () => {
                 });
                 setUserData(userResponse?.data?.user);
                 setDateNaissance(moment(userData?.date_de_naissance).format('YYYY-MM-DD'));
-                if (userData?.role === 'ADMIN') {
+                if (userData?.role !== 'ADMIN') {
                     const adminResponse = await axiosInstance.get('/utils/infos', {
                         headers: {
                             Authorization: `Bearer ${token}`
@@ -79,10 +81,9 @@ const UserMember = () => {
             }
         };
         fetchData();
-    }, [userData?.role]);
+    }, [userData?.role, userData?.date_de_naissance]);
     
     isAdmin = userData?.role === 'ADMIN' ? true : false;
-
 
       const handleSubmit = async (e) => {
         e.preventDefault();
@@ -97,14 +98,14 @@ const UserMember = () => {
             statut_matrimonial: isMarried,
             sexe: gender,
             religion,
+            religion_name: religionName,
             groupe_sanguin: bloodGroup,
             electrophorese: electrophoresis,
             signe_du_fa: signFa,
-            conjoint: conjointName,
+            id_conjoint: conjointName,
             profession: metier
         };
         payload.type_de_lien = userData?.role !== 'ADMIN' ? selectedLinkType : payload.type_de_lien;
-
     
         try {
             const token = localStorage.getItem('token');
@@ -124,13 +125,15 @@ const UserMember = () => {
             resetForm();
             setTimeout(() => navigate('/home'), 3000); // Rediriger après l'ajout réussi
         } catch (error) {
-            const errorMessage = error.response?.data?.message || 'Une erreur est survenue';
-            setMessage(errorMessage);
+            const errorMessage = error.response?.data?.Message || 'Une erreur est survenue';
             if (errorMessage === 'Cette personne est déja membre de la famille') {
+                toast.error('Vous êtes déja membre de la famille. Vous pouvez aller modifier vos informations au niveau de votre profile');
+                setMessage('Vous êtes déja membre de la famille. Vous pouvez aller modifier vos informations au niveau de votre profile');
                 setLoading(false);
-                setTimeout(() => navigate('/home'), 3000)
+                setTimeout(() => navigate('/profile'), 2000)
                 return;
             }
+            setMessage(errorMessage);
             toast.error(errorMessage);
             console.log(error);
         } finally {
@@ -140,7 +143,7 @@ const UserMember = () => {
     const handleCancel = () => {
         if (window.confirm('Êtes-vous sûr de vouloir annuler ? Toutes les modifications non enregistrées seront perdues.')) {
             resetForm();
-            navigate('/home'); // Vous pourriez vouloir naviguer vers une autre route si nécessaire
+            navigate('/home');
         }
     };
 
@@ -160,10 +163,6 @@ const UserMember = () => {
         setMessage('');
     };
     console.log(moment(userData?.date_de_naissance).format('DD/MM/YYYY'));
-
-
-   // Assumer que l'admin est toujours connecté
-//    const isAdmin = true; // Cette valeur devrait être définie en fonction de la logique d'authentification réelle
 
     return (
         <div className="register-member-container"> 
@@ -214,6 +213,7 @@ const UserMember = () => {
                             type="date"
                             value={dateNaissance}
                             onChange={(e) => setDateNaissance(e.target.value)}
+                            max={todayISO}
                             required
                         />
                     </div>
@@ -279,6 +279,7 @@ const UserMember = () => {
                             <option value="Marie(e)">Marie(e)</option>
                             <option value="Celibataire">Celibataire</option>
                             <option value="Divorce(e)">Divorce(e)</option>
+                            <option value="Concubinage">Concubinage</option>
                             <option value="Veuf(ve)">Veuf(ve)</option>
                         </select>
                     </div>
@@ -322,6 +323,16 @@ const UserMember = () => {
                             <option value="Autre">Autre</option>
                         </select>
                     </div>
+                    {religion === 'Autre' && (
+                        <div>
+                        <label>Entrer votre religion :</label>
+                        <input
+                            type="text"
+                            value={religionName}
+                            onChange={(e) => setReligionName(e.target.value)}
+                        />
+                        </div>
+                    )}
                     <div>
                         <label>Groupe sanguin :</label>
                         <select

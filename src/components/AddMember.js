@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Alert, Spinner } from 'react-bootstrap';
+import { Alert, Form, Spinner } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../services/axiosSetup';
-// import { useFamily } from '../context/FamilyContext';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const AddMember = () => {
-    // const { familyData } = useFamily();
-    const [lastName, setLastName] = useState('');
     const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
     const [dateNaissance, setDateNaissance] = useState('');
     const [pereName, setPereName] = useState();
     const [mereName, setMereName] = useState();
@@ -18,18 +16,18 @@ const AddMember = () => {
     const [religion, setReligion] = useState('');
     const [bloodGroup, setBloodGroup] = useState('');
     const [electrophoresis, setElectrophoresis] = useState('');
+    const [religionName, setReligionName] = useState('');
     const [signFa, setSignFA] = useState('');
     const [conjointName, setConjointName] = useState();
     const [metier, setMetier] = useState('');
     const [members, setMembers] = useState([]);
     const [linkTypes, setLinkTypes] = useState([]);
     const [selectedLinkType, setSelectedLinkType] = useState('');
-    const [userData, setUserData] = useState('');
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(false);
-    
-    
+    const [userData, setUserData] = useState('');
     const navigate = useNavigate(); 
+    const todayISO = new Date().toISOString().split('T')[0];
 
     useEffect(() => {
         const fetchData = async () => {
@@ -47,7 +45,6 @@ const AddMember = () => {
         };
         fetchData();
     }, []);
-
     useEffect(() => {
         const fetchLinkTypes = async () => {
             try {
@@ -57,10 +54,8 @@ const AddMember = () => {
                 console.log('Erreur lors de la récupération des types de liens:', error);
             }
         };
-    
         fetchLinkTypes();
     }, []);
-
     useEffect(() => {
         const fetchMembers = async () => {
             try {
@@ -73,51 +68,32 @@ const AddMember = () => {
         fetchMembers();
     }, []);
 
-    const checkIfMemberExists = async (firstName, dateNaissance, gender, electrophoresis, bloodGroup) => {
-        try {
-          const response = await axiosInstance.get('/user/member/tous', {
-            params: { prenom: firstName, date_de_naissance: dateNaissance, sexe: gender, electrophorese: electrophoresis, groupe_sanguin: bloodGroup }
-          });
-          return response.data.exists; // Supposons que la réponse contient un champ 'exists'
-        } catch (error) {
-          console.error('Erreur lors de la vérification de l\'existence du membre:', error);
-          return false;
-        }
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
         const token = localStorage.getItem('token');
-    
-        // Vérifier si le membre existe déjà
-        const memberExists = await checkIfMemberExists(firstName, dateNaissance, gender, electrophoresis, bloodGroup);
-        if (memberExists) {
-            setMessage('Un membre avec ces informations existe déjà.');
-            toast.error('Un membre avec ces informations existe déjà.');
-            setLoading(false);
-            setTimeout(() => navigate('/home'), 3000); // Redirection vers la page d'accueil après 3 secondes
-            return;
-        }
-    
+        
+        const payload = {
+            token: token,
+            nom: lastName,
+            prenom: firstName,
+            date_de_naissance: dateNaissance,
+            sexe: gender,
+            id_pere: pereName,
+            id_mere: mereName,
+            type_de_lien: selectedLinkType,
+            statut_matrimonial: isMarried,
+            id_conjoint: conjointName,
+            profession: metier,
+            groupe_sanguin: bloodGroup,
+            electrophorese: electrophoresis,
+            signe_du_fa: signFa,
+            religion,
+            religion_name: religionName
+        };
+
         try {
-            const response = await axiosInstance.post('admin/member/ajouter', {
-                prenom: firstName,
-                token: token,
-                nom: lastName,
-                date_de_naissance: dateNaissance,
-                id_pere: pereName,
-                id_mere: mereName,
-                statut_matrimonial: isMarried,
-                type_de_lien: selectedLinkType,
-                sexe: gender,
-                religion,
-                groupe_sanguin: bloodGroup,
-                electrophorese: electrophoresis,
-                signe_du_fa: signFa,
-                conjoint: conjointName,
-                profession: metier
-            }, {
+            const response = await axiosInstance.post('admin/member/ajouter', payload, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -131,7 +107,7 @@ const AddMember = () => {
             resetForm();
             setTimeout(() => navigate('/home'), 3000); // Rediriger après l'ajout réussi
         } catch (error) {
-            const errorMessage = error.response?.data?.Message || 'Une erreur est survenue';
+            const errorMessage = error.response?.data?.message || 'Une erreur est survenue';
             setMessage(errorMessage);
             toast.error(errorMessage);
             console.log(error);
@@ -145,7 +121,6 @@ const AddMember = () => {
             navigate('/home'); // Vous pourriez vouloir naviguer vers une autre route si nécessaire
         }
     };
-
     const resetForm = () => {
         setFirstName('');
         setLastName('');
@@ -159,13 +134,13 @@ const AddMember = () => {
         setElectrophoresis('');
         setSignFA('');
         setConjointName();
-        setSelectedLinkType('');
+        setSelectedLinkType();
         setMetier('');
         setMessage('');
     };
 
-    let isAdmin = false;  
-    if (userData?.role === 'ADMIN') isAdmin = true;
+   let isAdmin = false;  
+   if (userData?.role === 'ADMIN') isAdmin = true;
 
     return (
         <div className="register-member-container"> 
@@ -173,7 +148,7 @@ const AddMember = () => {
             {message && <p>{message}</p>}
             {isAdmin && (
                 <Alert variant="success">
-                    Vous êtes connecté en tant qu'Administrateur.
+                    Vous êtes connecté en tant que Administrateur.
                 </Alert>
             )}
             {loading && <Spinner animation="border" />}
@@ -216,6 +191,7 @@ const AddMember = () => {
                             type="date"
                             value={dateNaissance}
                             onChange={(e) => setDateNaissance(e.target.value)}
+                            max={todayISO}
                             required
                         />
                     </div>
@@ -229,7 +205,7 @@ const AddMember = () => {
                             onChange={(e) => setPereName(e.target.value)}
                         >
                             <option value="">Sélectionner un membre...</option>
-                            {members.map((member) => (
+                            {members?.map((member) => (
                                 <option key={member._id} value={member._id}>
                                     {member.prenom} {member.nom}
                                 </option>
@@ -243,7 +219,7 @@ const AddMember = () => {
                             onChange={(e) => setMereName(e.target.value)}
                         >
                             <option value="">Sélectionner un membre...</option>
-                            {members.map((member) => (
+                            {members?.map((member) => (
                                 <option key={member._id} value={member._id}>
                                     {member.prenom} {member.nom}
                                 </option>
@@ -253,9 +229,10 @@ const AddMember = () => {
                 </fieldset>
                 <fieldset>
                     <legend>Autres informations</legend>
-                    <div>
-                        <label>Type de lien :</label>
-                        <select
+                    <Form.Group>
+                        <Form.Label>Type de lien :</Form.Label>
+                        <Form.Control
+                            as="select"
                             value={selectedLinkType}
                             onChange={(e) => setSelectedLinkType(e.target.value)}
                             required
@@ -266,8 +243,8 @@ const AddMember = () => {
                                     {type}
                                 </option>
                             ))}
-                        </select>
-                    </div>
+                        </Form.Control>
+                    </Form.Group>
                     <div>
                         <label>État matrimonial :</label>
                         <select
@@ -276,9 +253,10 @@ const AddMember = () => {
                             required
                         >
                             <option value="">Sélectionner...</option>
-                            <option value="Marie(e)">Marie(e)</option>
+                            <option value="Marie(e)">Marié(e)</option>
                             <option value="Celibataire">Celibataire</option>
-                            <option value="Divorce(e)">Divorce(e)</option>
+                            <option value="Divorce(e)">Divorcé(e)</option>
+                            <option value="Concubinage">Concubinage</option>
                             <option value="Veuf(ve)">Veuf(ve)</option>
                         </select>
                     </div>
@@ -288,10 +266,9 @@ const AddMember = () => {
                             <select
                                 value={conjointName}
                                 onChange={(e) => setConjointName(e.target.value)}
-                                required
                             >
                                 <option value="">Sélectionner un membre...</option>
-                            {members.map((member) => (
+                            {members?.map((member) => (
                                 <option key={member._id} value={member._id}>
                                     {member.prenom} {member.nom}
                                 </option>
@@ -314,7 +291,6 @@ const AddMember = () => {
                             onChange={(e) => setReligion(e.target.value)}
                         >
                             <option value="">Sélectionner...</option>
-                            <option value="Vodouisme">Vodouisme</option>
                             <option value="Christianisme">Christianisme</option>
                             <option value="Islam">Islam</option>
                             <option value="Hindouisme">Hindouisme</option>
@@ -323,6 +299,16 @@ const AddMember = () => {
                             <option value="Autre">Autre</option>
                         </select>
                     </div>
+                    {religion === 'Autre' && (
+                        <div>
+                        <label>Entrer votre religion :</label>
+                        <input
+                            type="text"
+                            value={religionName}
+                            onChange={(e) => setReligionName(e.target.value)}
+                        />
+                        </div>
+                    )}
                     <div>
                         <label>Groupe sanguin :</label>
                         <select
@@ -338,7 +324,6 @@ const AddMember = () => {
                             <option value="AB-">AB-</option>
                             <option value="O+">O+</option>
                             <option value="O-">O-</option>
-                            <option value="Autre">Autre</option>
                         </select>
                     </div>
                     <div>
@@ -360,18 +345,17 @@ const AddMember = () => {
                             <option value="AS">AS</option>
                             <option value="SC">SC</option>
                             <option value="SS">SS</option>
-                            <option value="Autre">Autre</option>
                         </select>
                     </div>
                 </fieldset>
                 <div className="form-buttons">
-                <button type="submit">Ajouter</button>
-                <button type="button" onClick={handleCancel}>Annuler</button>
-            </div>
-        </form>
-        <ToastContainer/>
-    </div>
-);
+                    <button type="submit">Ajouter</button>
+                    <button type="button" onClick={handleCancel}>Annuler</button>
+                </div>
+            </form>
+        <ToastContainer />
+        </div>
+    );
 };
 
 export default AddMember;

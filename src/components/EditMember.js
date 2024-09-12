@@ -20,23 +20,22 @@ const EditMember = () => {
     const [conjointid, setConjointId] = useState('');
     const [metier, setMetier] = useState('');
     const [members, setMembers] = useState([]);
-    const [linkTypes, setLinkTypes] = useState([]);
-    const [selectedLinkType, setSelectedLinkType] = useState('');
+    const [religionName, setReligionName] = useState('');
     const [originalData, setOriginalData] = useState(null);
+    const [userData, setUserData] = useState('');
+     const todayISO = new Date().toISOString().split('T')[0];
     const navigate = useNavigate(); 
 
     useEffect(() => {
         let isMounted = true; // suivi si le composant est monté
         const fetchData = async () => {
             try {
-                const [memberResponse, linkTypesResponse, membersResponse] = await Promise.all([
+                const [memberResponse, membersResponse] = await Promise.all([
                     axiosInstance.get(`/admin/member/details/${id}`),
-                    axiosInstance.get('/utils/typesDeLien'),
                     axiosInstance.get('/user/member/tous')
                 ]);
                 if (isMounted) {
                     setOriginalData(memberResponse?.data?.data);
-                    setLinkTypes(linkTypesResponse?.data);
                     setMembers(membersResponse?.data);
                     setLastName(memberResponse?.data?.data?.nom || '')
                     setFirstName(memberResponse?.data?.data?.prenom);
@@ -47,11 +46,10 @@ const EditMember = () => {
                     setIsMarried(memberResponse?.data?.data?.statut_matrimonial || '');
                     setConjointId(memberResponse?.data?.data?.conjoint?.id);
                     setReligion(memberResponse?.data?.data?.religion || '');
+                    setReligionName(memberResponse?.data?.data?.religion_name || '');
                     setMetier(memberResponse?.data?.data?.profession || '');
                     setBloodGroup(memberResponse?.data?.data?.groupe_sanguin || '');
                     setElectrophoresis(memberResponse?.data?.data?.electrophorese || '');
-                    setSelectedLinkType(memberResponse?.data?.data?.type_de_lien || '');
-    
                 }
             } catch (error) {
                 if (isMounted) {
@@ -65,13 +63,15 @@ const EditMember = () => {
             isMounted = false; // fonction de nettoyage
         };
     }, [id]);
+
     const updateData = {
         prenom: firstName !== originalData?.prenom ? firstName : undefined,
         nom: lastName !== originalData?.nom ? lastName : undefined,
         date_de_naissance: moment(dateNaissance).format('DD/MM/YYYY') !== moment(originalData?.date_de_naissance).format('DD/MM/YYYY') ? moment(dateNaissance).format('DD/MM/YYYY') : undefined,
         statut_matrimonial: isMarried !== originalData?.statut_matrimonial ? isMarried : undefined,
-        sexe: gender !== originalData?.sexe ? gender :undefined,
+        sexe: gender !== originalData?.sexe ? gender : undefined,
         religion: religion !== originalData?.religion ? religion : undefined,
+        religion_name: religionName !== originalData?.religion_name ? religionName : undefined,
         groupe_sanguin: bloodGroup !== originalData?.groupe_sanguin ? bloodGroup : undefined,
         electrophorese: electrophoresis !== originalData?.electrophorese ? electrophoresis : undefined,
         profession: metier !== originalData?.profession ? metier : undefined,
@@ -79,13 +79,38 @@ const EditMember = () => {
         id_mere: mereid !== originalData?.mère?._id ? mereid : undefined,
         id_conjoint: conjointid !== originalData?.conjoint?.id ? conjointid : undefined,
     };
+
     const filteredData = Object.fromEntries(
         Object.entries(updateData).filter(([_, v]) => v !== undefined)
     );
+
+    useEffect(() => {
+        const fetchData = async () => {
+          try {
+            const token = localStorage.getItem('token');
+            const userResponse = await axiosInstance.get('/utils/profile', {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            });
+            setUserData(userResponse.data.user);        
+          } catch (error) {
+            console.error('Erreur lors de la récupération des données:', error.response?.data || error.message);
+          }
+        };
+        fetchData();
+    }, []);
+
+    let isAdmin = false;  
+    if (userData?.role === 'ADMIN' && userData?.id_membre === id) isAdmin = true;
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            await axiosInstance.put(`admin/member/modifier/${id}`, filteredData);
+            const endpoint = isAdmin 
+            ? `/admin/member/modify-profile-admin` 
+            : `/admin/member/modifier/${id}`;
+            await axiosInstance.put(endpoint, filteredData);
             setMessage('Membre modifié avec succès!');
             navigate('/members-list');
         } catch (error) {
@@ -95,7 +120,7 @@ const EditMember = () => {
         }
     };
     const handleCancel = () => {
-        navigate('/members-list'); // Rediriger vers la liste des membres sans modifier
+        navigate('/members-list');
     };
 
     return (
@@ -154,6 +179,7 @@ const EditMember = () => {
                                         type="date"
                                         value={dateNaissance}
                                         onChange={(e) => setDateNaissance(e.target.value)}
+                                        max={todayISO}
                                         required
                                     />
                                 </Form.Group>
@@ -198,26 +224,6 @@ const EditMember = () => {
                                 </Form.Group>
                             </Col>
                         </Row>
-                        <Row>
-                            <Col>
-                                <Form.Group controlId="selectedLinkType">
-                                    <Form.Label>Type de lien</Form.Label>
-                                    <Form.Control
-                                        as="select"
-                                        value={selectedLinkType}
-                                        onChange={(e) => setSelectedLinkType(e.target.value)}
-                                        required
-                                    >
-                                        <option value="">Sélectionner un type de lien...</option>
-                                        {linkTypes.map((type) => (
-                                            <option key={type} value={type}>
-                                                {type}
-                                            </option>
-                                        ))}
-                                    </Form.Control>
-                                </Form.Group>
-                            </Col>
-                        </Row>
                     </fieldset>
                     <fieldset> 
                         <legend>Autres informations</legend>
@@ -234,6 +240,7 @@ const EditMember = () => {
                                 <option value="Celibataire">Celibataire</option>
                                 <option value="Divorce(e)">Divorce(e)</option>
                                 <option value="Veuf(ve)">Veuf(ve)</option>
+                                <option value="Concubinage">Concubinage</option>
                             </Form.Control>
                         </Form.Group>
                         {isMarried === 'Marie(e)' && (
@@ -275,8 +282,19 @@ const EditMember = () => {
                                 <option value="Hindouisme">Hindouisme</option>
                                 <option value="Bouddhisme">Bouddhisme</option>
                                 <option value="Judaisme">Judaïsme</option>
+                                <option value="Autre">Autre</option>
                             </Form.Control>
                         </Form.Group>
+                        {religion === 'Autre' && (
+                            <Form.Group controlId="nom de religion">
+                                <Form.Label>Entrer le nom de votre religion</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    value={religionName}
+                                    onChange={(e) => setReligionName(e.target.value)}
+                                />
+                            </Form.Group>
+                        )}
                         <Form.Group controlId="bloodGroup">
                             <Form.Label>Groupe sanguin</Form.Label>
                             <Form.Control

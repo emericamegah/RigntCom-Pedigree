@@ -31,6 +31,7 @@ const MemberDetail = () => {
         fetchData();
     }, []);
 
+    console.log(userData.role);
     let isAdmin = false;  
     if (userData?.role === 'ADMIN') isAdmin = true;
     let isMember = false;
@@ -41,14 +42,11 @@ const MemberDetail = () => {
         const fetchMemberDetails = async () => {
             try {
                 setLoading(true);
-                const endpoint = isAdmin 
-                    ? `/admin/member/details/${id}` 
-                    : `/user/member/user-info`;
-                const response = await axiosInstance.get(endpoint);
+                const response = await axiosInstance.get(`/admin/member/details/${id}`);
                 if (isAdmin)
-                    setMember(response.data.data);
+                    setMember(response.data?.data);
                 else
-                    setMember(response.data?.userinfo);
+                    setMember(response.data?.details);
             } catch (error) {
                 console.error('Erreur lors de la récupération des détails du membre', error);
                 setError('Erreur lors de la récupération des détails du membre.');
@@ -156,10 +154,18 @@ const MemberDetail = () => {
                                 <th>Profession</th>
                                 <td>{member?.profession || 'Non spécifié'}</td>
                             </tr>
-                            <tr>
-                                <th>Religion</th>
-                                <td>{member?.religion || 'Non spécifié'}</td>
-                            </tr>
+                            {member?.religion !== 'Autre' && (
+                                <tr>
+                                    <th>Religion</th>
+                                    <td>{member?.religion || 'Non spécifié'}</td>
+                                </tr>
+                            )}
+                            {member?.religion === 'Autre' && (
+                                <tr>
+                                    <th>Religion</th>
+                                    <td>{member?.religion_name || 'Non spécifié'}</td>
+                                </tr>
+                            )}
                             {userData?.id_membre === id && (
                                 <tr>
                                     <th>Groupe sanguin</th>

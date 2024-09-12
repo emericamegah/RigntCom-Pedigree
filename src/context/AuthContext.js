@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import axiosInstance from '../services/axiosSetup';
 
 const AuthContext = createContext();
 
@@ -10,21 +10,19 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const HOST = "http://192.168.86.66:5000"; // Adresse de votre backend
-
   useEffect(() => {
     const fetchUser = async () => {
       try {
         const token = localStorage.getItem('token');
         if (token) {
-          const response = await axios.get(`${HOST}/api/utils/All-Permision`, {
+          const response = await axiosInstance.get(`/utils/All-Permision`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           const { user, fam_owner } = response.data;
           setUser(user);
           setRole(fam_owner ? 'ADMIN' : 'USER');
 
-          const memberResponse = await axios.get(`${HOST}/api/user/member/tous`, {
+          const memberResponse = await axiosInstance.get(`/user/member/tous`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           setIsMember(memberResponse.data.isMember);
@@ -44,14 +42,14 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.post(`${HOST}/api/auth/connexion`, credentials);
+      const response = await axiosInstance.post(`/auth/connexion`, credentials);
       const token = response.data?.data?.token;
       const user = response.data?.utilisateur;
       localStorage.setItem('token', token);
       setUser(user);
       setRole(user?.role);
 
-      const memberResponse = await axios.get(`${HOST}/api/user/member/tous`, {
+      const memberResponse = await axiosInstance.get(`/user/member/tous`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setIsMember(memberResponse.data.isMember);

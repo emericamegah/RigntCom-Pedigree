@@ -470,4 +470,4 @@ const GoJSDiagram = () => {
   return <div ref={diagramRef} style={{ width: '1800px', height: '1200px', border: '1px solid black' }}></div>;
 };
 
-export default GoJSDiagram;
+export default GoJSDiagram; 

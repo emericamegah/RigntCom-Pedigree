@@ -25,8 +25,11 @@ const EditMember = () => {
     const [members, setMembers] = useState([]);
     const [linkTypes, setLinkTypes] = useState([]);
     const [selectedLinkType, setSelectedLinkType] = useState('');
+    const [religionName, setReligionName] = useState('');
     const [originalData, setOriginalData] = useState(null);
     const [userData, setUserData] = useState('');
+    const [adminInfo, setAdminInfo] = useState('');
+    const todayISO = new Date().toISOString().split('T')[0];
     const navigate = useNavigate(); 
 
     useEffect(() => {
@@ -46,6 +49,23 @@ const EditMember = () => {
         fetchData();
     }, []);
 
+    useEffect(() => {
+        const fetchDataAdmin = async () => {
+          try {
+            const token = localStorage.getItem('token');
+            const Response = await axiosInstance.get('/utils/infos', {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            });
+            setAdminInfo(Response.data);        
+          } catch (error) {
+            console.error('Erreur lors de la récupération des données de l\'administrateur:', error.response?.data || error.message);
+          }
+        };
+        fetchDataAdmin();
+    }, []);
+
     let isAdmin = false;  
     if (userData?.role === 'ADMIN') isAdmin = true;
 
@@ -59,24 +79,24 @@ const EditMember = () => {
                     axiosInstance.get('/user/member/tous')
                 ]);
                 if (isMounted) {
-                    console.log(memberResponse.data);
-                    setOriginalData(memberResponse?.data?.userinfo);
+                    setOriginalData(memberResponse?.data?.details);
                     setLinkTypes(linkTypesResponse?.data);
                     setMembers(membersResponse?.data);
-                    setLastName(memberResponse?.data?.userinfo?.nom || '')
-                    setFirstName(memberResponse?.data?.userinfo?.prenom);
-                    setDateNaissance( moment(memberResponse?.data?.userinfo?.date_de_naissance).format('YYYY-MM-DD'));
-                    setGender(memberResponse?.data?.userinfo?.sexe || '');
-                    setPereId(memberResponse?.data?.userinfo?.père?._id);
-                    setMereId(memberResponse?.data?.userinfo?.mère?._id);
-                    setIsMarried(memberResponse?.data?.userinfo?.statut_matrimonial || '');
-                    setConjointId(memberResponse?.data?.userinfo?.conjoint?.id);
-                    setReligion(memberResponse?.data?.userinfo?.religion || '');
-                    setMetier(memberResponse?.data?.userinfo?.profession || '');
-                    setBloodGroup(memberResponse?.data?.userinfo?.groupe_sanguin || '');
-                    setElectrophoresis(memberResponse?.data?.userinfo?.electrophorese || '');
-                    setSelectedLinkType(memberResponse?.data?.userinfo?.type_de_lien || '');
-                    setSignFA(memberResponse?.data?.userinfo?.signe_du_fa || '');
+                    setLastName(memberResponse?.data?.details?.nom || '')
+                    setFirstName(memberResponse?.data?.details?.prenom);
+                    setDateNaissance( moment(memberResponse?.data?.details?.date_de_naissance).format('YYYY-MM-DD'));
+                    setGender(memberResponse?.data?.details?.sexe || '');
+                    setPereId(memberResponse?.data?.details?.père?._id);
+                    setMereId(memberResponse?.data?.details?.mère?._id);
+                    setIsMarried(memberResponse?.data?.details?.statut_matrimonial || '');
+                    setConjointId(memberResponse?.data?.details?.conjoint?.id);
+                    setReligion(memberResponse?.data?.details?.religion || '');
+                    setMetier(memberResponse?.data?.details?.profession || '');
+                    setBloodGroup(memberResponse?.data?.details?.groupe_sanguin || '');
+                    setElectrophoresis(memberResponse?.data?.details?.electrophorese || '');
+                    setSelectedLinkType(memberResponse?.data?.details?.type_de_lien || '');
+                    setSignFA(memberResponse?.data?.details?.signe_du_fa || '');
+                    setReligionName(memberResponse?.data?.details?.religion_name);
                 }
             } catch (error) {
                 if (isMounted) {
@@ -97,6 +117,7 @@ const EditMember = () => {
         statut_matrimonial: isMarried !== originalData?.statut_matrimonial ? isMarried : undefined,
         sexe: gender !== originalData?.sexe ? gender :undefined,
         religion: religion !== originalData?.religion ? religion : undefined,
+        religion_name: religionName !== originalData?.religion_name ? religionName : undefined,
         groupe_sanguin: bloodGroup !== originalData?.groupe_sanguin ? bloodGroup : undefined,
         electrophorese: electrophoresis !== originalData?.electrophorese ? electrophoresis : undefined,
         profession: metier !== originalData?.profession ? metier : undefined,
@@ -132,6 +153,11 @@ const EditMember = () => {
         <Container>
             <h2>Modifier les informations</h2>
             {message && <p>{message}</p>}
+            {!isAdmin && (
+                <fieldset>
+                    Vous êtes connecté en tant que membre de la famille. Vous donnerez votre lien en fonction de l'administraateur qui est {adminInfo?.nom} {adminInfo?.prenom}
+                </fieldset>
+            )}
             {originalData ? (
                 <Form onSubmit={handleSubmit}>
                     <fieldset>
@@ -184,6 +210,7 @@ const EditMember = () => {
                                         type="date"
                                         value={dateNaissance}
                                         onChange={(e) => setDateNaissance(e.target.value)}
+                                        max={todayISO}
                                         required
                                     />
                                 </Form.Group>
@@ -263,6 +290,7 @@ const EditMember = () => {
                                 <option value="Marie(e)">Marie(e)</option>
                                 <option value="Celibataire">Celibataire</option>
                                 <option value="Divorce(e)">Divorce(e)</option>
+                                <option value="Concubinage">Concubinage</option>
                                 <option value="Veuf(ve)">Veuf(ve)</option>
                             </Form.Control>
                         </Form.Group>
@@ -305,8 +333,19 @@ const EditMember = () => {
                                 <option value="Hindouisme">Hindouisme</option>
                                 <option value="Bouddhisme">Bouddhisme</option>
                                 <option value="Judaisme">Judaïsme</option>
+                                <option value="Autre">Autre</option>
                             </Form.Control>
                         </Form.Group>
+                        {religion === 'Autre' && (
+                            <Form.Group controlId="nom de religion">
+                                <Form.Label>Entrer le nom de votre religion</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    value={religionName}
+                                    onChange={(e) => setReligionName(e.target.value)}
+                                />
+                            </Form.Group>
+                        )}
                         <Form.Group controlId="bloodGroup">
                             <Form.Label>Groupe sanguin</Form.Label>
                             <Form.Control
@@ -323,7 +362,6 @@ const EditMember = () => {
                                 <option value="AB-">AB-</option>
                                 <option value="O+">O+</option>
                                 <option value="O-">O-</option>
-                                <option value="Autre">Autre</option>
                             </Form.Control>
                         </Form.Group>
                         <Form.Group controlId="electrophoresis">
@@ -338,7 +376,6 @@ const EditMember = () => {
                                 <option value="AS">AS</option>
                                 <option value="SC">SC</option>
                                 <option value="SS">SS</option>
-                                <option value="Autre">Autre</option>
                             </Form.Control>
                         </Form.Group>
                         <Form.Group controlId="signe du Fa">

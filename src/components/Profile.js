@@ -114,7 +114,7 @@ const Profile = () => {
                   <p><strong>Nom :</strong> {userData?.nom || 'Non spécifié'}</p>
                   <p><strong>Prénom :</strong> {userData?.prenom}</p>
                   <p><strong>Email :</strong> {userData?.email}</p>
-                  <p><strong>Rôle :</strong> {userData.role}</p>
+                  <p><strong>Rôle :</strong> {userData?.role}</p>
                   {editMode ? (
                     <Form onSubmit={handleSubmit}>
                       <Form.Group controlId="formEmail">
