@@ -9,7 +9,7 @@ import { useAuth } from '../context/AuthContext';
 import '../styles/Login.css';
 
 const Login = () => {
-  const { login, user, error } = useAuth();
+  const {authstate, login, user, error } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -24,7 +24,7 @@ const Login = () => {
       setMessage('Connexion réussie ! Vous serez redirigé vers la page d\'accueil.');
       setTimeout(() => navigate('/home'), 3000); // Redirection après 3 secondes
     }
-  }, [user, navigate]);
+  }, [user, authstate, navigate]);
 
   useEffect(() => {
     if (error) {

@@ -9,6 +9,11 @@ export const AuthProvider = ({ children }) => {
   const [isMember, setIsMember] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [authState, setAuthState] = useState({
+    isAuthenticated: false,
+    token: null,
+    tokenExpiration: null,
+  });
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -21,6 +26,10 @@ export const AuthProvider = ({ children }) => {
           const { user, fam_owner } = response.data;
           setUser(user);
           setRole(fam_owner ? 'ADMIN' : 'USER');
+          setAuthState({
+            isAuthenticated: true,
+            token,
+          });
 
           const memberResponse = await axiosInstance.get(`/user/member/tous`, {
             headers: { Authorization: `Bearer ${token}` }
@@ -69,7 +78,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, role, isMember, loading, error, login, logout }}>
+    <AuthContext.Provider value={{ authState, user, role, isMember, loading, error, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

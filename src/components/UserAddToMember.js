@@ -29,8 +29,6 @@ const UserMember = () => {
     const navigate = useNavigate(); 
     const todayISO = new Date().toISOString().split('T')[0];
     let isAdmin = false;
-    
-    
 
     useEffect(() => {
         const fetchMembers = async () => {
